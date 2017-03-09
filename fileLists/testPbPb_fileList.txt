@@ -1,0 +1,3 @@
+/mnt/hadoop/cms/store/user/abaty/2015PbPb_ppReco/HIHardProbesPeriperhal/HIHardProbesPeripheral/crab_20170222_163801/170222_153935/0000/HiForestAOD_1.root
+/mnt/hadoop/cms/store/user/abaty/2015PbPb_ppReco/HIHardProbesPeriperhal/HIHardProbesPeripheral/crab_20170222_163801/170222_153935/0000/HiForestAOD_104.root
+/mnt/hadoop/cms/store/user/abaty/2015PbPb_ppReco/MinBias_7_v2/HIMinimumBias7/crab_20170227_124858/170227_114910/0002/HiForestAOD_2464.root
