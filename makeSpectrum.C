@@ -18,6 +18,7 @@
 //#include "ppPlotting.C"
 #include "PbPbPlotting.C"
 #include "prettyPlotting.C"
+#include "RinRoutPlots.C"
 
 void makeSpectrum()
 {
@@ -34,13 +35,14 @@ void makeSpectrum()
 
 //same for PbPb
   for(int c = 0 ; c<s.nCentBins; c++){
-    s.HI[c] = new TH1D(Form("PbPbTrackSpectrum_%d_%d",5*s.lowCentBin[c],5*s.highCentBin[c]),";p_{T} (GeV);E#frac{d^{3}#sigma}{d^{3}p} (mb/GeV^{2})",s.ntrkBins,s.xtrkbins);
-    for(int i = 0; i<s.HInTriggers; i++) s.HIByTrigger[i][c] = new TH1D(Form("PbPbTrackSpectrumByTrigger%d_%d_%d",i,5*s.lowCentBin[c],5*s.highCentBin[c]),"",s.ntrkBins,s.xtrkbins);
-    for(int i = 0; i<s.HInTriggers; i++) s.HIUsedByTrigger[i][c] = new TH1D(Form("PbPbUsedTrackSpectrumByTrigger%d_%d_%d",i,5*s.lowCentBin[c],5*s.highCentBin[c]),"",s.ntrkBins,s.xtrkbins);
-    s.HIJets[c] = new TH1D(Form("PbPbJetSpectrum_%d_%d",5*s.lowCentBin[c],5*s.highCentBin[c]),";Leading Jet P_{T} (GeV);#sigma (mb)",s.njetBins,0,s.maxJetBin);
-    for(int i = 0; i<s.HInTriggers; i++) s.HIJetsByTrigger[i][c] = new TH1D(Form("PbPbJetSpectrumByTrigger%d_%d_%d",i,5*s.lowCentBin[c],5*s.highCentBin[c]),"",s.njetBins,0,s.maxJetBin);
+  for(int k = 0; k<s.nEvtPlaneBins+1; k++){
+    s.HI[c][k] = new TH1D(Form("PbPbTrackSpectrum_%d_%d_%d",5*s.lowCentBin[c],5*s.highCentBin[c],k),";p_{T} (GeV);E#frac{d^{3}#sigma}{d^{3}p} (mb/GeV^{2})",s.ntrkBins,s.xtrkbins);
+    for(int i = 0; i<s.HInTriggers; i++) s.HIByTrigger[i][c][k] = new TH1D(Form("PbPbTrackSpectrumByTrigger%d_%d_%d_%d",i,5*s.lowCentBin[c],5*s.highCentBin[c],k),"",s.ntrkBins,s.xtrkbins);
+    for(int i = 0; i<s.HInTriggers; i++) s.HIUsedByTrigger[i][c][k] = new TH1D(Form("PbPbUsedTrackSpectrumByTrigger%d_%d_%d_%d",i,5*s.lowCentBin[c],5*s.highCentBin[c],k),"",s.ntrkBins,s.xtrkbins);
+    if(k==0) s.HIJets[c] = new TH1D(Form("PbPbJetSpectrum_%d_%d",5*s.lowCentBin[c],5*s.highCentBin[c]),";Leading Jet P_{T} (GeV);#sigma (mb)",s.njetBins,0,s.maxJetBin);
+    if(k==0){ for(int i = 0; i<s.HInTriggers; i++) s.HIJetsByTrigger[i][c] = new TH1D(Form("PbPbJetSpectrumByTrigger%d_%d_%d",i,5*s.lowCentBin[c],5*s.highCentBin[c]),"",s.njetBins,0,s.maxJetBin);}
   }
-
+  }
 
   //loading files
   TFile * inFile = TFile::Open("ppInput.root","read");
@@ -60,8 +62,8 @@ void makeSpectrum()
   {
     for(int i = 0; i<s.HInTriggers; i++)
     {
-      if(s.doBetterHITrig && c<6 && i==1){//replaces a few triggers for better stats
-          s.HIspec[i][c] = (TH2D*) inFile->Get(Form("HI_spectrum_trigger%d_cent%d",i-1,c));
+      if(s.doBetterHITrig && c<10 && i==1){//replaces a few triggers for better stats //(removing jet 40 for 30-50)
+          for(int k = 0; k<s.nEvtPlaneBins+1; k++) s.HIspec[i][c][k] = (TH2D*) inFile->Get(Form("HI_spectrum_trigger%d_cent%d_EvtPl%d",i-1,c,k));
           s.HIevtCount[i][c] = (TH1D*) inFile->Get(Form("HI_evtCount%d_cent%d",i-1,c));
       /*}else if(s.doBetterHITrig && c>=6 && c<10 && i==s.HInTriggers-1){
           s.HIspec[i][c] = (TH2D*) inFile->Get(Form("HI_spectrum_trigger%d_cent%d",s.HInTriggers-2,c));
@@ -70,10 +72,10 @@ void makeSpectrum()
         s.HIspec[i][c] = (TH2D*) inFile->Get(Form("HI_spectrum_trigger%d_cent%d",s.HInTriggers-3,c));
         s.HIevtCount[i][c] = (TH1D*) inFile->Get(Form("HI_evtCount%d_cent%d",s.HInTriggers-3,c));*/ //removes other unprescaled triggers, should be equivilent to below (maybe changes if have failed jobs)
       }else{//behavior without better trigger handling
-        s.HIspec[i][c] = (TH2D*) inFile->Get(Form("HI_spectrum_trigger%d_cent%d",i,c));
+        for(int k = 0; k<s.nEvtPlaneBins+1; k++) s.HIspec[i][c][k] = (TH2D*) inFile->Get(Form("HI_spectrum_trigger%d_cent%d_EvtPl%d",i,c,k));
         s.HIevtCount[i][c] = (TH1D*) inFile->Get(Form("HI_evtCount%d_cent%d",i,c));
       }
-      s.HIspec[i][c]->SetDirectory(0);
+      for(int k = 0; k<s.nEvtPlaneBins+1; k++) s.HIspec[i][c][k]->SetDirectory(0);
       s.HIevtCount[i][c]->SetDirectory(0);
     }
     s.HInVtxMB[c] = (TH1D*) inFile->Get(Form("HI_nVtxMB_%d",c));
@@ -138,10 +140,11 @@ void makeSpectrum()
       tempEvtCount[i][m] = (TH1D*)s.HIevtCount[i][0]->Clone(Form("HItempEvtCount%d",m));
       tempEvtCount[i][m]->Reset();
       for(int c = combinationCentUpperBoundary[m]; c>=combinationCentLowerBoundary[m]; c--) tempEvtCount[i][m]->Add(s.HIevtCount[i][c]);
-      for(int j = 0; j<i; j++){
-        HIscale[i][m] = HIscale[i][m]*tempEvtCount[j][m]->Integral(tempEvtCount[j][m]->FindBin(s.HItriggerOverlapBins[j+1]),tempEvtCount[j][m]->FindBin(s.maxJetBin))/(double)tempEvtCount[j+1][m]->Integral(tempEvtCount[j+1][m]->FindBin(s.HItriggerOverlapBins[j+1]),tempEvtCount[j+1][m]->FindBin(s.maxJetBin));
-        if(i>0) s.h_HInormErr->SetBinContent(i,m+1,TMath::Power(1.0/tempEvtCount[j][m]->Integral(tempEvtCount[j][m]->FindBin(s.HItriggerOverlapBins[j+1]),tempEvtCount[j][m]->FindBin(s.maxJetBin))+1.0/tempEvtCount[j+1][m]->Integral(tempEvtCount[j+1][m]->FindBin(s.HItriggerOverlapBins[j+1]),tempEvtCount[j+1][m]->FindBin(s.maxJetBin)),0.5));
-        if(s.doBetterHITrig && i==1 && m==0) s.h_HInormErr->SetBinContent(i,m+1,0);//remove jet40
+     //30-50 modified with offset here! 
+     for(int j = 0; j<i; j++){
+        HIscale[i][m] = HIscale[i][m]*tempEvtCount[j][m]->Integral(tempEvtCount[j][m]->FindBin(s.HItriggerOverlapBins[j+1]+((m==1)?s.offsetFor30_50_pprecoPbPb:0)),tempEvtCount[j][m]->FindBin(s.maxJetBin))/(double)tempEvtCount[j+1][m]->Integral(tempEvtCount[j+1][m]->FindBin(s.HItriggerOverlapBins[j+1]+((m==1)?s.offsetFor30_50_pprecoPbPb:0)),tempEvtCount[j+1][m]->FindBin(s.maxJetBin));
+        if(i>0) s.h_HInormErr->SetBinContent(i,m+1,TMath::Power(1.0/tempEvtCount[j][m]->Integral(tempEvtCount[j][m]->FindBin(s.HItriggerOverlapBins[j+1]+((m==1)?s.offsetFor30_50_pprecoPbPb:0)),tempEvtCount[j][m]->FindBin(s.maxJetBin))+1.0/tempEvtCount[j+1][m]->Integral(tempEvtCount[j+1][m]->FindBin(s.HItriggerOverlapBins[j+1]+((m==1)?s.offsetFor30_50_pprecoPbPb:0)),tempEvtCount[j+1][m]->FindBin(s.maxJetBin)),0.5));
+        if(s.doBetterHITrig && i==1 && m<2) s.h_HInormErr->SetBinContent(i,m+1,0);//remove jet40
         if(s.doBetterHITrig && i==s.HInTriggers-1 && m>0)  s.h_HInormErr->SetBinContent(i-1,m+1,s.h_HInormErr->GetBinContent(i,m+1));//remove jet100
         if(s.doBetterHITrig && i==s.HInTriggers-2 && m>1)  s.h_HInormErr->SetBinContent(i-1,m+1,s.h_HInormErr->GetBinContent(i,m+1));//remove jet80
       }
@@ -149,55 +152,61 @@ void makeSpectrum()
     }
 
     for(int c = 0; c<20; c++){
-      if(c<6){
-        s.HIspec[i][c]->Scale(HIscale[i][0]);
-        s.HIevtCount[i][c]->Scale(HIscale[i][0]);
-      }
-      else if(c<10){
-        s.HIspec[i][c]->Scale(HIscale[i][1]);
-        s.HIevtCount[i][c]->Scale(HIscale[i][1]);
-      }else{
-        s.HIspec[i][c]->Scale(HIscale[i][2]);
-        s.HIevtCount[i][c]->Scale(HIscale[i][2]);
+      for(int k = 0; k<s.nEvtPlaneBins+1; k++){
+        if(c<6){
+          s.HIspec[i][c][k]->Scale(HIscale[i][0]);
+          if(k==0) s.HIevtCount[i][c]->Scale(HIscale[i][0]);
+        }
+        else if(c<10){
+          s.HIspec[i][c][k]->Scale(HIscale[i][1]);
+          if(k==0) s.HIevtCount[i][c]->Scale(HIscale[i][1]);
+        }else{
+          s.HIspec[i][c][k]->Scale(HIscale[i][2]);
+          if(k==0) s.HIevtCount[i][c]->Scale(HIscale[i][2]);
+        }
       } 
     }
     for(int c = 20; c<s.nCentBins; c++){
-      s.HIspec[i][c] = (TH2D*)s.HIspec[i][0]->Clone(Form("HI_spectrum_trigger%d_cent%d",i,c));
-      s.HIspec[i][c]->Reset();
-      s.HIevtCount[i][c] = (TH1D*)s.HIevtCount[i][0]->Clone(Form("HI_evtCount%d_cent%d",i,c));
-      s.HIevtCount[i][c]->Reset();
-      for(int cc = s.lowCentBin[c]; cc<s.highCentBin[c]; cc++){
-        s.HIspec[i][c]->Add(s.HIspec[i][cc]);
-        s.HIevtCount[i][c]->Add(s.HIevtCount[i][cc]);
+      for(int k = 0; k<s.nEvtPlaneBins+1; k++){
+        s.HIspec[i][c][k] = (TH2D*)s.HIspec[i][0][k]->Clone(Form("HI_spectrum_trigger%d_cent%d",i,c));
+        s.HIspec[i][c][k]->Reset();
+        if(k==0) s.HIevtCount[i][c] = (TH1D*)s.HIevtCount[i][0]->Clone(Form("HI_evtCount%d_cent%d",i,c));
+        if(k==0) s.HIevtCount[i][c]->Reset();
+        for(int cc = s.lowCentBin[c]; cc<s.highCentBin[c]; cc++){
+          s.HIspec[i][c][k]->Add(s.HIspec[i][cc][k]);
+          if(k==0) s.HIevtCount[i][c]->Add(s.HIevtCount[i][cc]);
+        }
       }
     }
      
     //total spectrum
     for(int c = 0; c<s.nCentBins; c++){
-      for(int j = s.HIevtCount[i][c]->FindBin(s.HItriggerBins[i]); j<s.HIevtCount[i][c]->FindBin(s.HItriggerBins[i+1]); j++)
+    for(int evtpl = 0; evtpl<s.nEvtPlaneBins+1; evtpl++){
+      for(int j = s.HIevtCount[i][c]->FindBin(s.HItriggerBins[i]+((s.lowCentBin[c]*5<50 && (s.HItriggerBins[i]!=0))?s.offsetFor30_50_pprecoPbPb:0)); j<s.HIevtCount[i][c]->FindBin(s.HItriggerBins[i+1]+((s.lowCentBin[c]*5<50)?s.offsetFor30_50_pprecoPbPb:0)); j++)//modified w/ offset!
       {
-        for(int k = 1; k<s.HI[c]->GetSize()+1; k++)
+        for(int k = 1; k<s.HI[c][evtpl]->GetSize()+1; k++)
         {
-          s.HI[c]->SetBinContent(k,s.HI[c]->GetBinContent(k)+s.HIspec[i][c]->GetBinContent(j,k)); 
-          s.HI[c]->SetBinError(k,TMath::Power(TMath::Power(s.HI[c]->GetBinError(k),2)+TMath::Power(s.HIspec[i][c]->GetBinError(j,k),2),0.5)); 
-          s.HIUsedByTrigger[i][c]->SetBinContent(k,s.HIUsedByTrigger[i][c]->GetBinContent(k)+s.HIspec[i][c]->GetBinContent(j,k)); 
-          s.HIUsedByTrigger[i][c]->SetBinError(k,TMath::Power(TMath::Power(s.HIUsedByTrigger[i][c]->GetBinError(k),2)+TMath::Power(s.HIspec[i][c]->GetBinError(j,k),2),0.5)); 
+          s.HI[c][evtpl]->SetBinContent(k,s.HI[c][evtpl]->GetBinContent(k)+s.HIspec[i][c][evtpl]->GetBinContent(j,k)); 
+          s.HI[c][evtpl]->SetBinError(k,TMath::Power(TMath::Power(s.HI[c][evtpl]->GetBinError(k),2)+TMath::Power(s.HIspec[i][c][evtpl]->GetBinError(j,k),2),0.5)); 
+          s.HIUsedByTrigger[i][c][evtpl]->SetBinContent(k,s.HIUsedByTrigger[i][c][evtpl]->GetBinContent(k)+s.HIspec[i][c][evtpl]->GetBinContent(j,k)); 
+          s.HIUsedByTrigger[i][c][evtpl]->SetBinError(k,TMath::Power(TMath::Power(s.HIUsedByTrigger[i][c][evtpl]->GetBinError(k),2)+TMath::Power(s.HIspec[i][c][evtpl]->GetBinError(j,k),2),0.5)); 
         }
-        s.HIJets[c]->SetBinContent(j,s.HIevtCount[i][c]->GetBinContent(j));
-        s.HIJets[c]->SetBinError(j,s.HIevtCount[i][c]->GetBinError(j));
+        if(evtpl==0) s.HIJets[c]->SetBinContent(j,s.HIevtCount[i][c]->GetBinContent(j));
+        if(evtpl==0) s.HIJets[c]->SetBinError(j,s.HIevtCount[i][c]->GetBinError(j));
       }
      
       //spectrum for each trigger
       for(int j = s.HIevtCount[i][c]->FindBin(0); j<s.HIevtCount[i][c]->FindBin(s.maxJetBin); j++)
       {
-        for(int k = 1; k<s.HIByTrigger[i][c]->GetSize()+1; k++)
+        for(int k = 1; k<s.HIByTrigger[i][c][evtpl]->GetSize()+1; k++)
         {
-          s.HIByTrigger[i][c]->SetBinContent(k,s.HIByTrigger[i][c]->GetBinContent(k)+s.HIspec[i][c]->GetBinContent(j,k)); 
-          s.HIByTrigger[i][c]->SetBinError(k,TMath::Power(TMath::Power(s.HIByTrigger[i][c]->GetBinError(k),2)+TMath::Power(s.HIspec[i][c]->GetBinError(j,k),2),0.5)); 
+          s.HIByTrigger[i][c][evtpl]->SetBinContent(k,s.HIByTrigger[i][c][evtpl]->GetBinContent(k)+s.HIspec[i][c][evtpl]->GetBinContent(j,k)); 
+          s.HIByTrigger[i][c][evtpl]->SetBinError(k,TMath::Power(TMath::Power(s.HIByTrigger[i][c][evtpl]->GetBinError(k),2)+TMath::Power(s.HIspec[i][c][evtpl]->GetBinError(j,k),2),0.5)); 
         }
-        s.HIJetsByTrigger[i][c]->SetBinContent(j,s.HIevtCount[i][c]->GetBinContent(j));
-        s.HIJetsByTrigger[i][c]->SetBinError(j,s.HIevtCount[i][c]->GetBinError(j));
+        if(evtpl==0) s.HIJetsByTrigger[i][c]->SetBinContent(j,s.HIevtCount[i][c]->GetBinContent(j));
+        if(evtpl==0) s.HIJetsByTrigger[i][c]->SetBinError(j,s.HIevtCount[i][c]->GetBinError(j));
       }
+    }//evt pl closed
     }//cent loop closed
   }
 
@@ -218,17 +227,19 @@ void makeSpectrum()
 
   for(int c = 0; c<s.nCentBins; c++)
   {
-    for(int i = 1; i<s.HI[c]->GetSize()+1; i++)
+  for(int k = 0; k<s.nEvtPlaneBins+1; k++){
+    for(int i = 1; i<s.HI[c][k]->GetSize()+1; i++)
     {
-      s.HI[c]->SetBinContent(i,s.HI[c]->GetBinContent(i)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1]))); 
-      s.HI[c]->SetBinError(i,s.HI[c]->GetBinError(i)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1])));
+      s.HI[c][k]->SetBinContent(i,s.HI[c][k]->GetBinContent(i)*((k!=0)?s.nEvtPlaneBins:1)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1]))); 
+      s.HI[c][k]->SetBinError(i,s.HI[c][k]->GetBinError(i)*((k!=0)?s.nEvtPlaneBins:1)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1])));
       for(int j = 0; j<s.HInTriggers; j++)
       {
-        s.HIByTrigger[j][c]->SetBinContent(i,s.HIByTrigger[j][c]->GetBinContent(i)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1]))); 
-        s.HIByTrigger[j][c]->SetBinError(i,s.HIByTrigger[j][c]->GetBinError(i)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1])));
-        s.HIUsedByTrigger[j][c]->SetBinContent(i,s.HIUsedByTrigger[j][c]->GetBinContent(i)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1]))); 
-        s.HIUsedByTrigger[j][c]->SetBinError(i,s.HIUsedByTrigger[j][c]->GetBinError(i)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1])));
+        s.HIByTrigger[j][c][k]->SetBinContent(i,s.HIByTrigger[j][c][k]->GetBinContent(i)*((k!=0)?s.nEvtPlaneBins:1)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1]))); 
+        s.HIByTrigger[j][c][k]->SetBinError(i,s.HIByTrigger[j][c][k]->GetBinError(i)*((k!=0)?s.nEvtPlaneBins:1)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1])));
+        s.HIUsedByTrigger[j][c][k]->SetBinContent(i,s.HIUsedByTrigger[j][c][k]->GetBinContent(i)*((k!=0)?s.nEvtPlaneBins:1)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1]))); 
+        s.HIUsedByTrigger[j][c][k]->SetBinError(i,s.HIUsedByTrigger[j][c][k]->GetBinError(i)*((k!=0)?s.nEvtPlaneBins:1)/(4*TMath::Pi()*(s.xtrkbins[i]-s.xtrkbins[i-1])));
       } 
+    }
     }
   }
  
@@ -256,7 +267,7 @@ void makeSpectrum()
   s.h_normSyst = (TH1D*)s.pp->Clone("h_normSyst");
   s.h_normSyst->Reset();
   for(int c = 0; c<s.nCentBins; c++){
-    s.h_HInormSyst[c] = (TH1D*) s.HI[c]->Clone(Form("h_HInormSyst_%d_%d",5*s.lowCentBin[c],5*s.highCentBin[c]));
+    s.h_HInormSyst[c] = (TH1D*) s.HI[c][0]->Clone(Form("h_HInormSyst_%d_%d",5*s.lowCentBin[c],5*s.highCentBin[c]));
     s.h_HInormSyst[c]->Reset();
   }
   for(int j = 1; j<s.h_normSyst->GetSize()-1; j++){
@@ -268,7 +279,7 @@ void makeSpectrum()
   for(int c = 0; c<s.nCentBins; c++){ 
     for(int cc = s.lowCentBin[c]; cc<s.highCentBin[c]; cc++){ 
       for(int j = 1; j<s.h_HInormSyst[c]->GetSize()-1; j++){
-        for(int i = 0; i<s.HInTriggers; i++) if(s.HI[c]->GetBinContent(j)!=0) s.h_HInormSyst[c]->SetBinContent(j,s.h_HInormSyst[c]->GetBinContent(j)+s.h_HInormErr->GetBinContent(i,(cc<6)?1:((cc<10)?2:3))*s.HIUsedByTrigger[i][cc]->GetBinContent(j)/s.HI[c]->GetBinContent(j));
+        for(int i = 0; i<s.HInTriggers; i++) if(s.HI[c][0]->GetBinContent(j)!=0) s.h_HInormSyst[c]->SetBinContent(j,s.h_HInormSyst[c]->GetBinContent(j)+s.h_HInormErr->GetBinContent(i,(cc<6)?1:((cc<10)?2:3))*s.HIUsedByTrigger[i][cc][0]->GetBinContent(j)/s.HI[c][0]->GetBinContent(j));
       }
     }
     s.h_HInormSyst[c]->Write();
@@ -299,24 +310,26 @@ void makeSpectrum()
     s.ppJetsByTrigger[j]->Write();
   }
   for(int c = 0; c<s.nCentBins; c++){
-    s.HI_perMBTrigger[c] = (TH1D*)s.HI[c]->Clone(Form("PbPb_NotperMBTrigger_%d_%d",5*s.lowCentBin[c],5*s.highCentBin[c]));
-    s.HI_perMBTrigger[c]->Write();
+  for(int k = 0; k<s.nEvtPlaneBins+1; k++){
+    if(k==0) s.HI_perMBTrigger[c] = (TH1D*)s.HI[c][0]->Clone(Form("PbPb_NotperMBTrigger_%d_%d",5*s.lowCentBin[c],5*s.highCentBin[c]));
+    if(k==0) s.HI_perMBTrigger[c]->Write();
    
     double nMBInCentRange = 0;
     for(int cc = s.lowCentBin[c]; cc<s.highCentBin[c]; cc++) nMBInCentRange += s.HInVtxMB[cc]->GetEntries();
-    s.HI[c]->Scale(1/(nMBInCentRange));
-    s.HIJets[c]->Scale(1/(nMBInCentRange));
-    s.HI[c]->Write();
-    s.HIJets[c]->Write();
+    s.HI[c][k]->Scale(1/(nMBInCentRange));
+    if(k==0) s.HIJets[c]->Scale(1/(nMBInCentRange));
+    s.HI[c][k]->Write();
+    if(k==0) s.HIJets[c]->Write();
     for(int j = 0; j<s.HInTriggers; j++){
-      s.HIByTrigger[j][c]->Scale(1/(nMBInCentRange));
-      s.HIUsedByTrigger[j][c]->Scale(1/(nMBInCentRange));
-      s.HIJetsByTrigger[j][c]->Scale(1/(nMBInCentRange));
-      s.HIByTrigger[j][c]->Write();
-      s.HIUsedByTrigger[j][c]->Write();
-      s.HIJetsByTrigger[j][c]->Write();
+      s.HIByTrigger[j][c][k]->Scale(1/(nMBInCentRange));
+      s.HIUsedByTrigger[j][c][k]->Scale(1/(nMBInCentRange));
+      if(k==0) s.HIJetsByTrigger[j][c]->Scale(1/(nMBInCentRange));
+      s.HIByTrigger[j][c][k]->Write();
+      s.HIUsedByTrigger[j][c][k]->Write();
+      if(k==0) s.HIJetsByTrigger[j][c]->Write();
     }
   } 
+  }
   
   for(int i = 0; i<s.nTriggers; i++)      s.h_scale->SetBinContent(i+1,1,scale[i]);
   for(int i = 0; i<3; i++){
@@ -328,5 +341,6 @@ void makeSpectrum()
   makePlotsPbPb(s);
   outF->Close();
   //makePlotsPP(s);
+  plotRinRout(s); 
   prettyPlotting(s);
 }

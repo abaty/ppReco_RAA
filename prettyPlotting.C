@@ -68,17 +68,17 @@ void prettyPlotting(Settings s){
   TH1D * ppSpec;
 
   for(int c = 0; c<s.nCentBins; c++){
-    if(s.lowCentBin[c]*5<50) continue; 
+    if(s.lowCentBin[c]*5<30) continue; 
     h[c] = (TH1D*)inputPlots->Get(Form("RAA_%d_%d",s.lowCentBin[c]*5,s.highCentBin[c]*5));
   }
   for(int c = 0; c<s.nCentBins; c++){
-    if(s.lowCentBin[c]*5<50) continue; 
-    pbpbSpec[c] = (TH1D*)inputPlots->Get(Form("PbPbTrackSpectrum_%d_%d",s.lowCentBin[c]*5,s.highCentBin[c]*5));
+    if(s.lowCentBin[c]*5<30) continue; 
+    pbpbSpec[c] = (TH1D*)inputPlots->Get(Form("PbPbTrackSpectrum_%d_%d_0",s.lowCentBin[c]*5,s.highCentBin[c]*5));
   }
   ppSpec = (TH1D*)inputPlots->Get(Form("pp_NotperMBTrigger"));
   bool hasPP = false;
   for(int c = 0; c<s.nCentBins; c++){
-     if(s.lowCentBin[c]*5<50) continue; 
+     if(s.lowCentBin[c]*5<30) continue; 
      h[c]->SetDirectory(0);
      h[c]->GetYaxis()->CenterTitle(true);
      h[c]->GetYaxis()->SetTitle("R_{AA}");
@@ -110,22 +110,27 @@ void prettyPlotting(Settings s){
     returnHyperonCorrection(0,hyperonPbPb[i],i,"hyperon_check/CurrentHyperonFractions_PASResult/");
     //hyperonPbPb[i]->Print("All");
   }
+  std::cout << "done loading PbPB" << std::endl;
   TH1D * hyperonpp = (TH1D*)h[10]->Clone("hyperonpp");
   returnHyperonCorrection(1,hyperonpp,0,"hyperon_check/CurrentHyperonFractions_PASResult/");//need to change to pp
   //hyperonpp->Print("All");
   hasPP=false;
+  std::cout << "multiplying hyperon stuff" << std::endl;
   for(int c = 0; c<s.nCentBins; c++){
-    if(s.lowCentBin[c]*5<50) continue; 
+    if(s.lowCentBin[c]*5<30) continue; 
+    std::cout << "multiplying..." << std::endl;
     h[c]->Multiply(hyperonPbPb[getHypInd(c)]);
     h[c]->Divide(hyperonpp);
 
     //hyperon correction for spectra
+    std::cout << "multipleying pp" << std::endl;
     if(c==0){ ppSpec->Multiply(hyperonpp); hasPP=true;}
+    std::cout << "done multipleying pp" << std::endl;
     pbpbSpec[c]->Multiply(hyperonPbPb[getHypInd(c)]);
+    std::cout << "done PbPb" << std::endl;
 
   }
   std::cout << "loaded hyperon stuff" << std::endl;
-
   //hyperon correctoin plot
 /*  TCanvas * c = new TCanvas("c","c",600,600);
   c->SetLogx();
@@ -165,7 +170,7 @@ void prettyPlotting(Settings s){
   TH1D * fake_PbPb = (TH1D*)fakeFile->Get("Fake_0");
   fake_PbPb->SetDirectory(0);
   fakeFile->Close();*/
-
+  
   setTDRStyle();
   TLine * line1;
   TLatex * tex = new TLatex(0.1,0.1,"cent");
@@ -207,7 +212,7 @@ void prettyPlotting(Settings s){
   float lumiUncert;//12% for pp lumi
   for(int c = 0; c<s.nCentBins; c++){
     std::cout << c << std::endl;
-    if(s.lowCentBin[c]*5<50) continue; 
+    if(s.lowCentBin[c]*5<30) continue; 
     //adding up uncertainties
     for(int i = 1; i<s.RAA_totSyst[c]->GetSize()-1; i++){
       s.RAA_totSyst[c]->SetBinContent(i,0);
@@ -294,7 +299,7 @@ void prettyPlotting(Settings s){
       //!this sytematic is largely bullshit since we don't know the data fake rate!
       //s.RAA_totSyst[c]->SetBinContent(i,Quad(s.RAA_totSyst[c]->GetBinContent(i),fake_PbPb->GetBinContent(fake_PbPb->FindBin(s.RAA_totSyst[c]->GetBinCenter(i)))-1));//3% for MC-based fake rate PbPb
       s.PbPb_totSyst[c]->SetBinContent(i,Quad(s.PbPb_totSyst[c]->GetBinContent(i),fake_pp->GetBinContent(fake_pp->FindBin(s.PbPb_totSyst[c]->GetBinCenter(i)))-1));//3% difference in data/MC (PbPb)
-      //s.RAA_totSyst[c]->SetBinContent(i,Quad(s.RAA_totSyst[c]->GetBinContent(i),fake_pp->GetBinContent(fake_pp->FindBin(s.RAA_totSyst[c]->GetBinCenter(i)))-1));//for MC-based fake rate pp 
+     // s.RAA_totSyst[c]->SetBinContent(i,Quad(s.RAA_totSyst[c]->GetBinContent(i),fake_pp->GetBinContent(fake_pp->FindBin(s.RAA_totSyst[c]->GetBinCenter(i)))-1));//for MC-based fake rate pp 
       //if(c==0)s.pp_totSyst->SetBinContent(i,Quad(s.pp_totSyst->GetBinContent(i),fake_pp->GetBinContent(fake_pp->FindBin(s.pp_totSyst->GetBinCenter(i)))-1));//for MC-based faked rate pp
       //s.RCP_totSyst[c]->SetBinContent(i,Quad(s.RCP_totSyst[c]->GetBinContent(i),0.03));//for MC-based fake rate  */
       
@@ -304,26 +309,26 @@ void prettyPlotting(Settings s){
       //if(c==0)s.pp_totSyst->SetBinContent(i,Quad(s.pp_totSyst->GetBinContent(i),0.01));//1% resolution for not unfolding
       
       s.RAA_totSyst[c]->SetBinContent(i,Quad(s.RAA_totSyst[c]->GetBinContent(i),s.h_HInormSyst[c]->GetBinContent(i)));//add in PbPb normalization uncert
-      std::cout << s.RAA_totSyst[c]->GetBinContent(i) << std::endl;
+      //std::cout << s.RAA_totSyst[c]->GetBinContent(i) << std::endl;
       s.PbPb_totSyst[c]->SetBinContent(i,Quad(s.PbPb_totSyst[c]->GetBinContent(i),s.h_HInormSyst[c]->GetBinContent(i)));//add in PbPb normalization uncert
       s.RAA_totSyst[c]->SetBinContent(i,Quad(s.RAA_totSyst[c]->GetBinContent(i),s.h_normSyst->GetBinContent(i)));//add in pp normalization uncert
-      std::cout << s.RAA_totSyst[c]->GetBinContent(i) << std::endl;
+      //std::cout << s.RAA_totSyst[c]->GetBinContent(i) << std::endl;
       //if(c==0)s.pp_totSyst->SetBinContent(i,Quad(s.pp_totSyst->GetBinContent(i),s.h_normSyst->GetBinContent(i)));//add in pp normalization uncert
       //s.RCP_totSyst[c]->SetBinContent(i,Quad(s.RCP_totSyst[c]->GetBinContent(i),s.h_HInormSyst[c]->GetBinContent(i)));//add in PbPb normalization uncert
       //s.RCP_totSyst[c]->SetBinContent(i,Quad(s.RCP_totSyst[c]->GetBinContent(i),s.h_HInormSyst[32]->GetBinContent(i)));//add in PbPb normalization uncert
       
       s.RAA_totSyst[c]->SetBinContent(i,Quad(s.RAA_totSyst[c]->GetBinContent(i),0.03));//pp uncertainty for pileup
-      std::cout << s.RAA_totSyst[c]->GetBinContent(i) << std::endl;
+      //std::cout << s.RAA_totSyst[c]->GetBinContent(i) << std::endl;
       //if(c==0)s.pp_totSyst->SetBinContent(i,Quad(s.pp_totSyst->GetBinContent(i),0.03));//pp uncertainty for pileup
       
       //s.RAA_totSyst[c]->SetBinContent(i,Quad(s.RAA_totSyst[c]->GetBinContent(i),0.04));//tight selection data/MC
       //s.PbPb_totSyst[c]->SetBinContent(i,Quad(s.PbPb_totSyst[c]->GetBinContent(i),0.04));//tight selection data/MC
       
       s.RAA_totSyst[c]->SetBinContent(i,Quad(s.RAA_totSyst[c]->GetBinContent(i),TMath::Max(hyperonPbPb[getHypInd(c)]->GetBinContent(i)-1,0.015)));//PbPb hyperon study
-      std::cout << s.RAA_totSyst[c]->GetBinContent(i) <<std::endl;
+      //std::cout << s.RAA_totSyst[c]->GetBinContent(i) <<std::endl;
       s.PbPb_totSyst[c]->SetBinContent(i,Quad(s.PbPb_totSyst[c]->GetBinContent(i),TMath::Max(hyperonPbPb[getHypInd(c)]->GetBinContent(i)-1,0.015)));//PbPb hyperon study
       s.RAA_totSyst[c]->SetBinContent(i,Quad(s.RAA_totSyst[c]->GetBinContent(i),TMath::Max(hyperonpp->GetBinContent(i)-1,0.015)));//pp hyperon study
-      std::cout << s.RAA_totSyst[c]->GetBinContent(i)<< std::endl;
+      //std::cout << s.RAA_totSyst[c]->GetBinContent(i)<< std::endl;
       //if(c==0)s.pp_totSyst->SetBinContent(i,Quad(s.pp_totSyst->GetBinContent(i),TMath::Max(hyperonpp->GetBinContent(i)-1,0.015)));//pp hyperon study
       //s.RCP_totSyst[c]->SetBinContent(i,Quad(s.RCP_totSyst[c]->GetBinContent(i),TMath::Max(hyperonPbPb[getHypInd(c)]->GetBinContent(i)-1,0.015)));//PbPb hyperon study
       //s.RCP_totSyst[c]->SetBinContent(i,Quad(s.RCP_totSyst[c]->GetBinContent(i),TMath::Max(hyperonPbPb[getHypInd(32)]->GetBinContent(i)-1,0.015)));//PbPb hyperon study

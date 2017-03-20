@@ -24,32 +24,38 @@ void countTracks(std::vector<std::string> inputFiles, int jobNum)
   TH1D::SetDefaultSumw2();
   TH2D::SetDefaultSumw2();
   bool doEvtPlane = true;
-  float evtPlaneLow = 0;//2*(TMath::Pi()/2.0)/3;//between 0 and 90 degrees
-  float evtPlaneHigh = (TMath::Pi()/2.0);//between 0 and 90 degrees
  
 
   bool doDebug = false;
   bool dotrkcorr = true;
-  bool doNoiseFilter = false;
+  bool doNoiseFilter = true;
   float caloMatchValue = 0.5;
   float caloMatchStart = 20;
   float jetEtaSelection = 2;
   
   Settings s; 
-
+  TH1D * recenterx = new TH1D("recenterQx","",10000,-250,250);
+  TH2D * recenterxy = new TH2D("recenterQxy","",500,-50,50,500,-50,50);
+  TH1D * recentery = new TH1D("recenterQy","",10000,-250,250);
+  TH2D * hiHFnTrk = new TH2D("hiHFnTrk","",200,0,100,200,0,200);
   TH1D * hiHFDist = new TH1D("hiHFDist",";hiHF;Counts",200,0,10000);
   s.h_evtPlanePsi =  new TH1D("hiEvtPlanePsi","",100,-TMath::Pi()/2.0,TMath::Pi()/2.0); 
   s.h_Q2Mag =  new TH1D("hiQ2Mag","",200,0,200); 
   for(int i = 0; i<s.HInTriggers; i++)
   {
     for(int j = 0; j<20; j++){
-      s.HIspec[i][j] = new TH2D(Form("HI_spectrum_trigger%d_cent%d",i,j),"",s.njetBins,0,s.maxJetBin,s.ntrkBins,s.xtrkbins);
+      for(int k = 0; k<s.nEvtPlaneBins+1; k++){
+        s.HIspec[i][j][k] = new TH2D(Form("HI_spectrum_trigger%d_cent%d_EvtPl%d",i,j,k),"",s.njetBins,0,s.maxJetBin,s.ntrkBins,s.xtrkbins);
+      }
       s.HIevtCount[i][j] = new TH1D(Form("HI_evtCount%d_cent%d",i,j),";max jet p_{T};N",s.njetBins,0,s.maxJetBin);
       s.HIevtCount[i][j]->SetMarkerColor(i);
       s.HIevtCount_JetVars[i][j] = new TH2D(Form("HI_evtCount_JetVars%d_cent%d",i,j),"max jet #eta;max jet p_{T};N",10,-2,2,16,40,120);
     }
   }
-  for(int j = 0; j<20; j++) s.HInVtxMB[j] = new TH1D(Form("HI_nVtxMB_%d",j),"nVtx;N Events",12,0,12);
+  for(int j = 0; j<20; j++){
+    s.HInVtxMB[j] = new TH1D(Form("HI_nVtxMB_%d",j),"nVtx;N Events",12,0,12);
+    s.nTrkOffline[j] = new TH1D(Form("nTrkOffline_%d",j),"nTrk;N Events",1500,0,1500);
+  }
 //******************************************************************************************************************************
 //******************************************************************************************************************************
 //******************************************************************************************************************************
@@ -260,8 +266,10 @@ void countTracks(std::vector<std::string> inputFiles, int jobNum)
       bool MinBias = 0;
       for(int j = 0; j<3; j++) MinBias = MinBias || (HIMB[j]==1);
       if(!MinBias && !HIj40_c50 && !HIj60_c50 && !HIj80_c50 && !HIj100_c50 && !HIj40_c30 && !HIj60_c30 && !HIj80_c30 && !HIj100_c30) continue;
-  
+ 
+      //event plane stuff 
       TComplex  Q2 = TComplex(0,0);
+      TComplex  Qrecenter = TComplex(-0.1384,2.036);
       float evtPlanePsi = 0;
       float Q2Mag = 0;
       int nTowersAbove3GeV[2] = {0};
@@ -273,14 +281,19 @@ void countTracks(std::vector<std::string> inputFiles, int jobNum)
           TComplex tempC = TComplex(pfEnergy->at(q)/TMath::CosH(pfEta->at(q)),2*pfPhi->at(q),true); 
           Q2 += tempC; 
         }
+        Q2 -= Qrecenter;
       }
       if(nTowersAbove3GeV[0]<3 || nTowersAbove3GeV[1]<3) continue;//hf3coincidence calculated from pfcands
       evtPlanePsi = 0.5*Q2.Theta();
       Q2Mag =  Q2.Rho();
       if(MinBias){
+        recenterx->Fill(Q2.Re());
+        recenterxy->Fill(Q2.Re(),Q2.Im());
+        recentery->Fill(Q2.Im());
         s.h_evtPlanePsi->Fill(evtPlanePsi);
         s.h_Q2Mag->Fill(Q2Mag);
       }
+      //end evt plane stuff
 
       //**************************************************
       //for trigger combination with jet triggers
@@ -315,13 +328,9 @@ void countTracks(std::vector<std::string> inputFiles, int jobNum)
       if(HIj100_c50 && !HIj100_c30 && PD==1 && hiBin>=100)  s.HIevtCount[4][hiBin/10]->Fill(maxJtPt);  
       
      if(doDebug) std::cout << "Starting Track Loop" << std::endl;
+     int nTrkOfflineNet = 0;
      for(int j = 0; j<nTrk; j++)
-     { 
-       if(trkPt[j]<0.5 || trkPt[j]>=400) continue;
-       if(TMath::Abs(trkEta[j])>1) continue;
-       if(highPurity[j]!=1) continue; 
-       if( trkPtError[j]/trkPt[j]>0.3) continue;       
-      
+     {
        bool isCompatibleWithVertex = false;
        for(int v = 0; v<nVtx; v++){
          if(TMath::Abs(zVtx[v])>15) continue;
@@ -330,12 +339,20 @@ void countTracks(std::vector<std::string> inputFiles, int jobNum)
            break;
          }
        }          
+       if(trkPt[j]>0.4 && highPurity[j]==1 && TMath::Abs(trkEta[j])<2.4 && trkPtError[j]/trkPt[j]<0.1 && isCompatibleWithVertex) nTrkOfflineNet++; 
+ 
+       if(trkPt[j]<0.5 || trkPt[j]>=400) continue;
+       if(TMath::Abs(trkEta[j])>1) continue;
+       if(highPurity[j]!=1) continue; 
+       if( trkPtError[j]/trkPt[j]>0.3) continue;       
+      
        if(!isCompatibleWithVertex) continue;
+       int dPhiBin = -1;
        if(doEvtPlane){
          float dPhi1 = TMath::ACos(TMath::Cos(trkPhi[j]-evtPlanePsi)); 
          float dPhi2 = TMath::ACos(TMath::Cos(trkPhi[j]-(evtPlanePsi+TMath::Pi())));//reflected part of the evt plane (for tracks that are pi away from evt plane angle)
-         float mindPhi = TMath::Min(dPhi1,dPhi2); 
-         if(mindPhi<evtPlaneLow || mindPhi>evtPlaneHigh) continue;
+         float mindPhi = TMath::Min(dPhi1,dPhi2);
+         dPhiBin = (int)(s.nEvtPlaneBins*(mindPhi/(TMath::Pi()/2.0))+1);//0 bin is inclusive, should make nEvtPlaneBins event spaced bins from 1 to nEvtPlaneBins+1 
        }
  
        //if(TMath::Abs(trkDz1[j]/trkDzError1[j])>3 || TMath::Abs(trkDxy1[j]/trkDxyError1[j])>3) continue;
@@ -364,19 +381,36 @@ void countTracks(std::vector<std::string> inputFiles, int jobNum)
        
        //dividing by pt at bin center instead of track by track pt (just a convention)
        float binCenter;
-       binCenter = s.HIspec[0][0]->GetYaxis()->GetBinCenter(s.HIspec[0][0]->GetYaxis()->FindBin(trkPt[j]));
+       binCenter = s.HIspec[0][0][0]->GetYaxis()->GetBinCenter(s.HIspec[0][0][0]->GetYaxis()->FindBin(trkPt[j]));
        
        if(!dotrkcorr) correction=1;
-       if(MinBias==1 && PD==0) s.HIspec[0][hiBin/10]->Fill(maxJtPt,trkPt[j],correction/binCenter); 
-       if(HIj40_c30  && PD==1 && hiBin>=60)   s.HIspec[1][hiBin/10]->Fill(maxJtPt,trkPt[j],correction/binCenter);
-       if(HIj60_c30  && PD==1 && hiBin>=60)   s.HIspec[2][hiBin/10]->Fill(maxJtPt,trkPt[j],correction/binCenter);
-       if(HIj80_c30  && PD==1 && hiBin>=60)   s.HIspec[3][hiBin/10]->Fill(maxJtPt,trkPt[j],correction/binCenter);
-       if(HIj100_c30 && PD==1 && hiBin>=60) s.HIspec[4][hiBin/10]->Fill(maxJtPt,trkPt[j],correction/binCenter);  
-       if(HIj40_c50  && !HIj40_c30 && PD==1 && hiBin>=100)   s.HIspec[1][hiBin/10]->Fill(maxJtPt,trkPt[j],correction/binCenter);
-       if(HIj60_c50  && !HIj60_c30 && PD==1 && hiBin>=100)   s.HIspec[2][hiBin/10]->Fill(maxJtPt,trkPt[j],correction/binCenter);
-       if(HIj80_c50  && !HIj80_c30 && PD==1 && hiBin>=100)   s.HIspec[3][hiBin/10]->Fill(maxJtPt,trkPt[j],correction/binCenter);
-       if(HIj100_c50 && !HIj100_c30 && PD==1 && hiBin>=100) s.HIspec[4][hiBin/10]->Fill(maxJtPt,trkPt[j],correction/binCenter);  
+       if(MinBias==1 && PD==0) s.HIspec[0][hiBin/10][0]->Fill(maxJtPt,trkPt[j],correction/binCenter); 
+       if(HIj40_c30  && PD==1 && hiBin>=60)   s.HIspec[1][hiBin/10][0]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+       if(HIj60_c30  && PD==1 && hiBin>=60)   s.HIspec[2][hiBin/10][0]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+       if(HIj80_c30  && PD==1 && hiBin>=60)   s.HIspec[3][hiBin/10][0]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+       if(HIj100_c30 && PD==1 && hiBin>=60) s.HIspec[4][hiBin/10][0]->Fill(maxJtPt,trkPt[j],correction/binCenter);  
+       if(HIj40_c50  && !HIj40_c30 && PD==1 && hiBin>=100)   s.HIspec[1][hiBin/10][0]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+       if(HIj60_c50  && !HIj60_c30 && PD==1 && hiBin>=100)   s.HIspec[2][hiBin/10][0]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+       if(HIj80_c50  && !HIj80_c30 && PD==1 && hiBin>=100)   s.HIspec[3][hiBin/10][0]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+       if(HIj100_c50 && !HIj100_c30 && PD==1 && hiBin>=100) s.HIspec[4][hiBin/10][0]->Fill(maxJtPt,trkPt[j],correction/binCenter);  
+       
+       //filling histograms for event plane part
+       if(doEvtPlane){
+         if(MinBias==1 && PD==0) s.HIspec[0][hiBin/10][dPhiBin]->Fill(maxJtPt,trkPt[j],correction/binCenter); 
+         if(HIj40_c30  && PD==1 && hiBin>=60)   s.HIspec[1][hiBin/10][dPhiBin]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+         if(HIj60_c30  && PD==1 && hiBin>=60)   s.HIspec[2][hiBin/10][dPhiBin]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+         if(HIj80_c30  && PD==1 && hiBin>=60)   s.HIspec[3][hiBin/10][dPhiBin]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+         if(HIj100_c30 && PD==1 && hiBin>=60) s.HIspec[4][hiBin/10][dPhiBin]->Fill(maxJtPt,trkPt[j],correction/binCenter);  
+         if(HIj40_c50  && !HIj40_c30 && PD==1 && hiBin>=100)   s.HIspec[1][hiBin/10][dPhiBin]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+         if(HIj60_c50  && !HIj60_c30 && PD==1 && hiBin>=100)   s.HIspec[2][hiBin/10][dPhiBin]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+         if(HIj80_c50  && !HIj80_c30 && PD==1 && hiBin>=100)   s.HIspec[3][hiBin/10][dPhiBin]->Fill(maxJtPt,trkPt[j],correction/binCenter);
+         if(HIj100_c50 && !HIj100_c30 && PD==1 && hiBin>=100) s.HIspec[4][hiBin/10][dPhiBin]->Fill(maxJtPt,trkPt[j],correction/binCenter);  
+        } 
       } //end trk loop
+      if(MinBias==1 && PD==0){
+        s.nTrkOffline[hiBin/10]->Fill(nTrkOfflineNet);
+        hiHFnTrk->Fill(hiHF,nTrkOfflineNet);
+      }
     }//end event loop
     inputFile->Close();
   }//end file loop
@@ -386,12 +420,16 @@ void countTracks(std::vector<std::string> inputFiles, int jobNum)
   outF = TFile::Open(Form("PbPb_output_%d.root",jobNum),"recreate");
   outF->cd();
   hiHFDist->Write();
+  hiHFnTrk->Write();
+  recenterx->Write();
+  recenterxy->Write();
+  recentery->Write();
   s.h_evtPlanePsi->Write();
   s.h_Q2Mag->Write();
   for(int i = 0; i<s.HInTriggers; i++)
   {
     for(int j = 0; j<20; j++){
-      s.HIspec[i][j]->Write();
+      for(int k = 0; k<s.nEvtPlaneBins+1; k++) s.HIspec[i][j][k]->Write();
       s.HIevtCount[i][j]->Write();
       //s.HIevtCount_JetVars[i][j]->Write();
     }
@@ -405,6 +443,7 @@ void countTracks(std::vector<std::string> inputFiles, int jobNum)
   }
   for(int j = 0; j<20; j++){
     s.HInVtxMB[j]->Write();
+    s.nTrkOffline[j]->Write();
     //s.HInVtxMB_trk[j]->Write();
   }
   outF->Close(); 

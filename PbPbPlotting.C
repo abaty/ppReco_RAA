@@ -23,15 +23,15 @@ void makePlotsPbPb(Settings s)
 {
   for(int c = 0; c<s.nCentBins; c++){
     for(int j = 0; j<s.HInTriggers; j++){
-      s.HIByTrigger[j][c]->SetLineColor(j+1);
-      s.HIByTrigger[j][c]->SetLineWidth(1);
-      s.HIByTrigger[j][c]->SetMarkerColor(j+1);
-      s.HIByTrigger[j][c]->SetFillColor(j+1);
-      s.HIUsedByTrigger[j][c]->SetLineColor(kBlack);
-      s.HIUsedByTrigger[j][c]->SetLineWidth(2);
-      s.HIUsedByTrigger[j][c]->SetMarkerColor(j+1);
-      s.HIUsedByTrigger[j][c]->SetMarkerSize(0);
-      s.HIUsedByTrigger[j][c]->SetFillColor(j+1);
+      s.HIByTrigger[j][c][0]->SetLineColor(j+1);
+      s.HIByTrigger[j][c][0]->SetLineWidth(1);
+      s.HIByTrigger[j][c][0]->SetMarkerColor(j+1);
+      s.HIByTrigger[j][c][0]->SetFillColor(j+1);
+      s.HIUsedByTrigger[j][c][0]->SetLineColor(kBlack);
+      s.HIUsedByTrigger[j][c][0]->SetLineWidth(2);
+      s.HIUsedByTrigger[j][c][0]->SetMarkerColor(j+1);
+      s.HIUsedByTrigger[j][c][0]->SetMarkerSize(0);
+      s.HIUsedByTrigger[j][c][0]->SetFillColor(j+1);
       s.HIJetsByTrigger[j][c]->SetLineColor(j+1);
       s.HIJetsByTrigger[j][c]->SetLineWidth(1);
       s.HIJetsByTrigger[j][c]->SetMarkerColor(j+1);
@@ -54,7 +54,7 @@ void makePlotsPbPb(Settings s)
   TLegend * leg;
   c1->SetLogy();
   for(int c = 0; c<s.nCentBins; c++){
-    if(s.lowCentBin[c]*5<50) continue; 
+    if(s.lowCentBin[c]*5<30) continue; 
     gStyle->SetLegendBorderSize(0); 
     leg = new TLegend(0.5,0.6,0.9,0.9);
     s.HIJets[c]->Scale(100);
@@ -113,7 +113,7 @@ void makePlotsPbPb(Settings s)
     delete leg;
   }
   for(int c = 0; c<s.nCentBins;c++){
-    if(s.lowCentBin[c]*5<50) continue; 
+    if(s.lowCentBin[c]*5<30) continue; 
     c1->SetLogy(0);
     for(int i = 0; i<s.HInTriggers-1; i++) s.HIJetsByTrigger[s.HInTriggers-1-i][c]->Divide(s.HIJetsByTrigger[s.HInTriggers-2-i][c]);
     s.HIJetsByTrigger[1][c]->GetYaxis()->SetRangeUser(0,2);
@@ -210,19 +210,19 @@ void makePlotsPbPb(Settings s)
   c1->SetLogy();
   c1->SetLogx();
   for(int c = 0; c<s.nCentBins;c++){
-    if(s.lowCentBin[c]*5<50) continue; 
-    s.HI[c]->SetMarkerSize(0.8);
-    s.HI[c]->GetYaxis()->SetRangeUser(TMath::Max(s.HI[20]->GetMinimum()/200.0,1e-15),s.HI[20]->GetMaximum()*1000);
-    s.HI[c]->GetXaxis()->SetRangeUser(0.7,400);
-    s.HI[c]->Draw();
-    s.HIUsedByTrigger[0][c]->SetFillColor(kGray);
+    if(s.lowCentBin[c]*5<30) continue; 
+    s.HI[c][0]->SetMarkerSize(0.8);
+    s.HI[c][0]->GetYaxis()->SetRangeUser(TMath::Max(s.HI[20][0]->GetMinimum()/200.0,1e-15),s.HI[20][0]->GetMaximum()*1000);
+    s.HI[c][0]->GetXaxis()->SetRangeUser(0.7,400);
+    s.HI[c][0]->Draw();
+    s.HIUsedByTrigger[0][c][0]->SetFillColor(kGray);
     //s.HIUsedByTrigger[4][c]->SetFillColor(kCyan+2);
-    s.HIUsedByTrigger[4][c]->SetFillColor(kCyan-10);
-    s.HIUsedByTrigger[3][c]->Add(s.HIUsedByTrigger[4][c]);
-    s.HIUsedByTrigger[3][c]->SetFillColor(kCyan+2);
-    s.HIUsedByTrigger[2][c]->Add(s.HIUsedByTrigger[3][c]);
-    s.HIUsedByTrigger[1][c]->Add(s.HIUsedByTrigger[2][c]);
-    s.HIUsedByTrigger[0][c]->Add(s.HIUsedByTrigger[1][c]);
+    s.HIUsedByTrigger[4][c][0]->SetFillColor(kCyan-10);
+    s.HIUsedByTrigger[3][c][0]->Add(s.HIUsedByTrigger[4][c][0]);
+    s.HIUsedByTrigger[3][c][0]->SetFillColor(kCyan+2);
+    s.HIUsedByTrigger[2][c][0]->Add(s.HIUsedByTrigger[3][c][0]);
+    s.HIUsedByTrigger[1][c][0]->Add(s.HIUsedByTrigger[2][c][0]);
+    s.HIUsedByTrigger[0][c][0]->Add(s.HIUsedByTrigger[1][c][0]);
     /*if(s.doBetterHITrig && s.lowCentBin[c]<6){  s.HIUsedByTrigger[1][c]->SetFillColor(kGray); s.HIUsedByTrigger[1][c]->SetLineWidth(-1);}
     if(s.doBetterHITrig && s.lowCentBin[c]>5){  s.HIUsedByTrigger[4][c]->SetFillColor(kCyan+2);s.HIUsedByTrigger[3][c]->SetLineWidth(-1);}
     if(s.doBetterHITrig && s.lowCentBin[c]>9){  s.HIUsedByTrigger[3][c]->SetFillColor(2); s.HIUsedByTrigger[4][c]->SetFillColor(2); s.HIUsedByTrigger[2][c]->SetLineWidth(0); s.HIUsedByTrigger[3][c]->SetLineWidth(0);}*/
@@ -230,17 +230,17 @@ void makePlotsPbPb(Settings s)
       if(s.doBetterHITrig && s.lowCentBin[c]<6 && i==1) continue;
       if(s.doBetterHITrig && s.lowCentBin[c]>5 && i==4) continue;
       if(s.doBetterHITrig && s.lowCentBin[c]>9 && (i==3 || i==4)) continue;
-      s.HIUsedByTrigger[i][c]->Draw("HIST same");
+      s.HIUsedByTrigger[i][c][0]->Draw("HIST same");
     }
-    s.HI[c]->Draw("sameaxis");
-    s.HI[c]->Draw("same");
+    s.HI[c][0]->Draw("sameaxis");
+    s.HI[c][0]->Draw("same");
     leg = new TLegend(0.51,0.61,0.95,0.9,NULL,"brNDC");
-    leg->AddEntry(s.HI[c],"PbPb Uncorrected Spectrum","p");
-    leg->AddEntry(s.HIUsedByTrigger[0][c],"Minimum Bias","f");
-    if(!s.doBetterHITrig || s.lowCentBin[c]>5) leg->AddEntry(s.HIUsedByTrigger[1][c],"Jet40 trigger","f");
-    leg->AddEntry(s.HIUsedByTrigger[2][c],"Jet60 trigger","f");
-    if(!s.doBetterHITrig && s.lowCentBin[c]<10) leg->AddEntry(s.HIUsedByTrigger[3][c],"Jet80 trigger","f");
-    if(!s.doBetterHITrig && s.lowCentBin[c]<6) leg->AddEntry(s.HIUsedByTrigger[4][c],"Jet100 trigger","f");
+    leg->AddEntry(s.HI[c][0],"PbPb Uncorrected Spectrum","p");
+    leg->AddEntry(s.HIUsedByTrigger[0][c][0],"Minimum Bias","f");
+    if(!s.doBetterHITrig || s.lowCentBin[c]>5) leg->AddEntry(s.HIUsedByTrigger[1][c][0],"Jet40 trigger","f");
+    leg->AddEntry(s.HIUsedByTrigger[2][c][0],"Jet60 trigger","f");
+    if(!s.doBetterHITrig && s.lowCentBin[c]<10) leg->AddEntry(s.HIUsedByTrigger[3][c][0],"Jet80 trigger","f");
+    if(!s.doBetterHITrig && s.lowCentBin[c]<6) leg->AddEntry(s.HIUsedByTrigger[4][c][0],"Jet100 trigger","f");
     leg->AddEntry((TObject*)0,Form("|#eta|<1   %d-%d%s",s.lowCentBin[c]*5,s.highCentBin[c]*5,"%"),"");
     leg->Draw("same");
     c1->SaveAs(Form("plots/png/HITrack_FullSpectrum_%d_%d.png",s.lowCentBin[c]*5,s.highCentBin[c]*5));
@@ -269,27 +269,27 @@ void makePlotsPbPb(Settings s)
     canv->SetBottomMargin( B/H );
     canv->SetTickx(0);
     canv->SetTicky(0);
-    s.HI[c]->GetXaxis()->SetRangeUser(0.7,350);
-    s.HI[c]->GetYaxis()->SetRangeUser(1e-14,999);
-    s.HI[c]->GetYaxis()->SetNdivisions(508);
-    s.HI[c]->SetMarkerSize(1.2);
-    s.HI[c]->GetXaxis()->CenterTitle();
-    s.HI[c]->GetXaxis()->SetTitle("p_{T} (GeV)");
-    s.HI[c]->GetXaxis()->SetLabelSize(0.04);
-    s.HI[c]->GetYaxis()->CenterTitle();
-    s.HI[c]->GetYaxis()->SetLabelSize(0.04);
-    s.HI[c]->GetYaxis()->SetTitleSize(0.04);
-    s.HI[c]->GetYaxis()->SetTitleOffset(1.6);
-    s.HI[c]->GetYaxis()->SetTitle("#frac{1}{N_{evt}} E#frac{d^{3}N_{trk}}{dp^{3}} (GeV)^{-2}");
-    s.HI[c]->Draw();
+    s.HI[c][0]->GetXaxis()->SetRangeUser(0.7,350);
+    s.HI[c][0]->GetYaxis()->SetRangeUser(1e-14,999);
+    s.HI[c][0]->GetYaxis()->SetNdivisions(508);
+    s.HI[c][0]->SetMarkerSize(1.2);
+    s.HI[c][0]->GetXaxis()->CenterTitle();
+    s.HI[c][0]->GetXaxis()->SetTitle("p_{T} (GeV)");
+    s.HI[c][0]->GetXaxis()->SetLabelSize(0.04);
+    s.HI[c][0]->GetYaxis()->CenterTitle();
+    s.HI[c][0]->GetYaxis()->SetLabelSize(0.04);
+    s.HI[c][0]->GetYaxis()->SetTitleSize(0.04);
+    s.HI[c][0]->GetYaxis()->SetTitleOffset(1.6);
+    s.HI[c][0]->GetYaxis()->SetTitle("#frac{1}{N_{evt}} E#frac{d^{3}N_{trk}}{dp^{3}} (GeV)^{-2}");
+    s.HI[c][0]->Draw();
     for(int i = 0; i<s.HInTriggers; i++){
       if(s.doBetterHITrig && s.lowCentBin[c]<6 && i==1) continue;
       if(s.doBetterHITrig && s.lowCentBin[c]>5 && i==4) continue;
       if(s.doBetterHITrig && s.lowCentBin[c]>9 && (i==3 || i==4)) continue;
-      s.HIUsedByTrigger[i][c]->Draw("HIST same");
+      s.HIUsedByTrigger[i][c][0]->Draw("HIST same");
     }
-    s.HI[c]->Draw("sameaxis");
-    s.HI[c]->Draw("same");
+    s.HI[c][0]->Draw("sameaxis");
+    s.HI[c][0]->Draw("same");
     leg->SetTextSize(0.03);
     leg->Draw("same");
     
@@ -310,17 +310,17 @@ void makePlotsPbPb(Settings s)
     //end pretty plot
    
     c1->SetLogy(0);
-    for(int i = 0; i<s.HInTriggers; i++) s.HIUsedByTrigger[i][c]->Divide(s.HI[c]);
-    s.HIUsedByTrigger[0][c]->GetYaxis()->SetRangeUser(0,2);
-    s.HIUsedByTrigger[0][c]->GetYaxis()->SetTitle("Relative Contribution to Bin");
-    s.HIUsedByTrigger[0][c]->Draw("HIST");
+    for(int i = 0; i<s.HInTriggers; i++) s.HIUsedByTrigger[i][c][0]->Divide(s.HI[c][0]);
+    s.HIUsedByTrigger[0][c][0]->GetYaxis()->SetRangeUser(0,2);
+    s.HIUsedByTrigger[0][c][0]->GetYaxis()->SetTitle("Relative Contribution to Bin");
+    s.HIUsedByTrigger[0][c][0]->Draw("HIST");
     for(int i = 1; i<s.HInTriggers; i++){
       if(s.doBetterHITrig && s.lowCentBin[c]<6 && i==1) continue;
       if(s.doBetterHITrig && s.lowCentBin[c]>5 && i==4) continue;
       if(s.doBetterHITrig && s.lowCentBin[c]>9 && (i==3 || i==4)) continue;
-      s.HIUsedByTrigger[i][c]->Draw("HIST same");
+      s.HIUsedByTrigger[i][c][0]->Draw("HIST same");
     }
-    s.HIUsedByTrigger[0][c]->Draw("sameaxis");
+    s.HIUsedByTrigger[0][c][0]->Draw("sameaxis");
     leg->Draw("same");
     c1->SaveAs(Form("plots/png/HITrack_FullSpectrum_%d_%d_relativeContribution.png",s.lowCentBin[c]*5,s.highCentBin[c]*5));
     c1->SaveAs(Form("plots/pdf/HITrack_FullSpectrum_%d_%d_relativeContribution.pdf",s.lowCentBin[c]*5,s.highCentBin[c]*5));
@@ -330,9 +330,9 @@ void makePlotsPbPb(Settings s)
 
   c1->SetLogy(0);
   for(int c = 0; c<s.nCentBins;c++){
-    if(s.lowCentBin[c]*5<50) continue; 
+    if(s.lowCentBin[c]*5<30) continue; 
     c1->Clear();
-    s.RAA[c] = (TH1D*)s.HI[c]->Clone(Form("RAA_%d_%d",s.lowCentBin[c]*5,s.highCentBin[c]*5));
+    s.RAA[c] = (TH1D*)s.HI[c][0]->Clone(Form("RAA_%d_%d",s.lowCentBin[c]*5,s.highCentBin[c]*5));
     //s.RAA[c]->Scale(1/s.nColl[c]);//for not using lumi
     //s.RAA[c]->Divide(s.pp);//for not using lumi
     s.RAA[c]->Scale(70.0/s.nColl[c]);//TAA
@@ -560,7 +560,7 @@ void makePlotsPbPb(Settings s)
   c2->SetLogx();
   for(int c = 0; c<s.nCentBins; c++)
   {
-    if(s.lowCentBin[c]*5<50) continue; 
+    if(s.lowCentBin[c]*5<30) continue; 
     s.h_HInormSyst[c]->GetXaxis()->SetRangeUser(0.7,400);
     s.h_HInormSyst[c]->GetXaxis()->SetTitle("p_{T}");
     s.h_HInormSyst[c]->GetYaxis()->SetRangeUser(0,0.04);

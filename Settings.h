@@ -25,9 +25,11 @@ class Settings {
   static const int ntrkBins = 37;
   double xtrkbins[ntrkBins+1] = { 0.5,0.6, 0.7 , 0.8 , 0.9 , 1.0 , 1.1 , 1.2 , 1.4 , 1.6 , 1.8 , 2.0 , 2.2 , 2.4 , 3.2 , 4.0 , 4.8 , 5.6 , 6.4 , 7.2 , 9.6 , 12.0, 14.4,19.2, 24.0, 28.8, 35.2, 41.6, 48.0, 60.8,73.6,86.4,103.6,120.8,140,165,250,400};
   double xt_xtrkbins[ntrkBins+1] = { 0.5*2/5020.0,0.6*2/5020.0, 0.7*2/5020.0, 0.8*2/5020.0, 0.9*2/5020.0, 1.0*2/5020.0, 1.1*2/5020.0, 1.2*2/5020.0, 1.4*2/5020.0, 1.6*2/5020.0, 1.8*2/5020.0, 2.0*2/5020.0, 2.2*2/5020.0, 2.4*2/5020.0, 3.2*2/5020.0, 4.0*2/5020.0, 4.8*2/5020.0, 5.6*2/5020.0, 6.4*2/5020.0, 7.2*2/5020.0, 9.6*2/5020.0, 12.0*2/5020.0, 14.4*2/5020.0,19.2*2/5020.0, 24.0*2/5020.0, 28.8*2/5020.0, 35.2*2/5020.0, 41.6*2/5020.0, 48.0*2/5020.0, 60.8*2/5020.0,73.6*2/5020.0,86.4*2/5020.0,103.6*2/5020.0,120.8*2/5020.0,140*2/5020.0,165*2/5020.0,250*2/5020.0,400*2/5020.0};
-  
+ 
+  static const int nEvtPlaneBins = 9; 
 
   static const int nTriggers = 4;
+  
   double triggerBins[nTriggers+1] = {0,60,80,100,1200};
   double triggerOverlapBins[nTriggers] = {0,60,80,100};
   /*double triggerBins[nTriggers+1] = {0,55,75,95,1200};
@@ -35,6 +37,7 @@ class Settings {
 
   bool   doBetterHITrig = true;//removes jet40 from 0-30% and removes jet80/100 for 50-100 and 30-100%
   static const int HInTriggers = 5;
+  static const int offsetFor30_50_pprecoPbPb = 60;
   double HItriggerBins[HInTriggers+1] = {0,60,80,100,120,1200};
   double HItriggerOverlapBins[HInTriggers] = {0,60,80,100,120};
   /*double HItriggerBins[HInTriggers+1] = {0,55,75,95,115,1200};
@@ -68,7 +71,7 @@ class Settings {
   double TAA[nCentBins] = {25.98,20.46,1127./70.0,882./70.0,685.9/70.0,526.5/70.0,399.3/70.0,297.5/70.0,217.1/70.0,155.1/70.0,107.9/70.0,73.51/70.0,48.76/70.0,31.46/70.0,19.69/70.0,12.02/70.0,7.042/70.0,3.974/70.0,2.12/70.0,1.164/70.0,392.4/70.0,98.33/70.0,30.74/70.0,11.51,3.819,0.9345,15.87/70.0,5.502/70.0,1079.1/70.0,754/70.0,0.1525};//Ncoll/70.0for TAA in most places, otherwise we are using offical numbers from cent group if no 70.0is there
   double TAAuncert[nCentBins] = {1.7,1.8,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,2.3,5.0,9.5,5,5,5,5,16.};//assume 5% uncert for 'unofficial' values for now (5.0 is official, 5 is not in this list)*/
 
-  TH2D *spec[nTriggers],               *HIspec[HInTriggers][nCentBins];
+  TH2D *spec[nTriggers],               *HIspec[HInTriggers][nCentBins][nEvtPlaneBins+1];
   TH1D *evtCount[nTriggers],           *HIevtCount[HInTriggers][nCentBins];
   TH2D *evtCount_JetVars[nTriggers],   *HIevtCount_JetVars[HInTriggers][nCentBins];
   TH1D *nVtxMB,                        *HInVtxMB[nCentBins];
@@ -76,9 +79,9 @@ class Settings {
   TH1D *evtCount_trk[nTriggers_trk],   *HIevtCount_trk[HInTriggers_trk][nCentBins];
   TH1D *nVtxMB_trk,                    *HInVtxMB_trk[nCentBins];
 
-  TH1D * pp,                           *HI[nCentBins];
-  TH1D * ppByTrigger[nTriggers],       *HIByTrigger[HInTriggers][nCentBins];
-  TH1D * ppUsedByTrigger[nTriggers],   *HIUsedByTrigger[HInTriggers][nCentBins];
+  TH1D * pp,                           *HI[nCentBins][nEvtPlaneBins+1];
+  TH1D * ppByTrigger[nTriggers],       *HIByTrigger[HInTriggers][nCentBins][nEvtPlaneBins+1];
+  TH1D * ppUsedByTrigger[nTriggers],   *HIUsedByTrigger[HInTriggers][nCentBins][nEvtPlaneBins+1];
   TH1D * ppJets,                       *HIJets[nCentBins];
   TH1D * ppJetsByTrigger[nTriggers],   *HIJetsByTrigger[HInTriggers][nCentBins];
   TH1D * pp_perMBTrigger,              *HI_perMBTrigger[nCentBins];               
@@ -92,6 +95,7 @@ class Settings {
 
   TH1D * RAA[nCentBins];
   TH1D * RAA_trk[nCentBins];
+  TH1D * nTrkOffline[20];
 
   TH2D *h_scale, *h_scale_trk, *h_HIscale, *h_HIscale_trk;
   TH2D *h_normErr, *h_normErr_trk, *h_HInormErr, *h_HInormErr_trk;
